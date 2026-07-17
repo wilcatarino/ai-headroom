@@ -1,20 +1,35 @@
-# Claude Code Usage Menu Bar App — Implementation Plan
+# Claude Code Usage Menu Bar App - Implementation Plan
+
+> **Status: Implemented (2026-07-17).** All 11 tasks were delivered. This document is preserved as the plan of record; the task bodies below reflect what was planned. See "Implementation status and deviations" immediately below for the differences between this plan and what actually shipped, which is the source of truth for the current state.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+## Implementation status and deviations
+
+Delivered and committed locally. The library layer (`UsageKit`) is fully covered by tests (61 checks passing via `swift run UsageKitTests`); the AppKit UI was verified by running the app. Differences from the plan below, all forced by the "no Xcode" constraint or found during testing:
+
+- **Test framework.** XCTest and swift-testing ship only with full Xcode, so they are unavailable with Command Line Tools. The `UsageKitTests` target is therefore an executable with a small custom assertion harness (`Tests/UsageKitTests/Harness.swift` plus a `main.swift` registry), run with `swift run UsageKitTests` (not `swift test`). It exits non-zero on failure, so CI still works. This replaces the `testTarget` and every `@Test`/`XCTest` example in the tasks below; the assertions themselves are unchanged.
+- **Public visibility.** Because the test target imports `UsageKit` without `@testable`, symbols exercised by tests (`UsageResponse.decode`, `UsageSnapshot.from`, `severity(from:percent:)`, the model initializers) are `public`.
+- **Sendable.** `Keychain` and `UsageClient` were marked `Sendable` to satisfy Swift 6 strict concurrency across the `TokenProvider` actor and the app's `@MainActor` boundary.
+- **Placeholder glyph.** The not-logged-in and empty-countdown placeholder is a hyphen (`◐ -`, `-`) rather than an em dash, matching the docs style.
+- **Error state and retry.** A `BarState.error` case (`◐ ⚠`) was added, plus a fast retry with backoff (2, 4, 8, 15 seconds) until the first successful load, and `NSLog` diagnostics. This fixes a transient first-fetch failure (Keychain first-access prompt or cold-start network) that otherwise left the bar on "Carregando…" until a manual refresh.
+- **Packaging.** `Info.plist` lives in `Packaging/Info.plist`, not under `Sources/` (SwiftPM would flag it as an unhandled resource). `Scripts/make-app.sh` gained `--run` and `--install` modes for the rebuild-and-relaunch flow.
+- **Fixtures.** Test percentages reflect the captured response at implementation time and are frozen on disk for determinism.
+- **Repo hygiene.** Added GitHub Actions CI (`.github/workflows/ci.yml`), `LICENSE` (MIT), `CONTRIBUTING.md`, `.editorconfig`, and a README with an unofficial-project disclaimer.
+
 **Goal:** A macOS menu bar app that shows how much of the authenticated Claude Code plan is used (5h session + 7d weekly windows) with reset countdowns, backed by a reusable `UsageKit` library.
 
-**Architecture:** SwiftPM package with two products — a pure, unit-tested `UsageKit` library (Keychain credentials, OAuth token refresh, usage API client, view models, pure title/format rendering) and a thin AppKit executable `ClaudeUsageBar` (NSStatusItem + poller + panel). All network, Keychain, and clock dependencies sit behind protocols so logic is tested with fakes; AppKit UI is verified manually.
+**Architecture:** SwiftPM package with two products - a pure, unit-tested `UsageKit` library (Keychain credentials, OAuth token refresh, usage API client, view models, pure title/format rendering) and a thin AppKit executable `ClaudeUsageBar` (NSStatusItem + poller + panel). All network, Keychain, and clock dependencies sit behind protocols so logic is tested with fakes; AppKit UI is verified manually.
 
-**Tech Stack:** Swift 6.3 (Command Line Tools, no Xcode), Swift Package Manager, AppKit, Foundation, Security (Keychain), ServiceManagement (`SMAppService`), swift-testing (`import Testing`).
+**Tech Stack:** Swift 6.3 (Command Line Tools, no Xcode), Swift Package Manager, AppKit, Foundation, Security (Keychain), ServiceManagement (`SMAppService`). Tests use a custom executable harness (see "Implementation status and deviations"), not XCTest/swift-testing, which require full Xcode.
 
 ## Global Constraints
 
 - Platform floor: **macOS 13** (`platforms: [.macOS(.v13)]`). Required for `MenuBarExtra`/`SMAppService`; we use AppKit `NSStatusItem` but keep the floor.
-- No Xcode: everything builds via `swift build` / `swift test` with Command Line Tools.
+- No Xcode: everything builds via `swift build` with Command Line Tools. Tests run via `swift run UsageKitTests` (a custom executable harness), because `swift test` needs XCTest/swift-testing from full Xcode.
 - Usage endpoint: `GET https://api.anthropic.com/api/oauth/usage`, headers `Authorization: Bearer <token>` and `anthropic-beta: oauth-2025-04-20`.
 - OAuth refresh endpoint (best-effort, behind protocol, NOT live-tested during dev): `POST https://console.anthropic.com/v1/oauth/token`, JSON body `{"grant_type":"refresh_token","refresh_token":"<rt>","client_id":"9d1c250a-e61b-44d9-88ed-5944d1962f5e"}`, response `{access_token, refresh_token, expires_in}`.
-- Keychain item: generic password, service `Claude Code-credentials`, value is JSON. **When writing back after refresh, preserve all other keys (e.g. `mcpOAuth`) — only mutate `claudeAiOauth.accessToken/refreshToken/expiresAt`.** Clobbering the blob would wipe the user's MCP tokens.
+- Keychain item: generic password, service `Claude Code-credentials`, value is JSON. **When writing back after refresh, preserve all other keys (e.g. `mcpOAuth`) - only mutate `claudeAiOauth.accessToken/refreshToken/expiresAt`.** Clobbering the blob would wipe the user's MCP tokens.
 - Poll interval: 60s. Menu bar shows the session (5h) window as the primary figure.
 - All Portuguese-facing copy uses the strings shown in tasks verbatim.
 
@@ -230,7 +245,7 @@ git commit -m "feat: Credentials model and plan label helper"
 
 ---
 
-### Task 3: Credentials blob — parse & non-destructive mutate
+### Task 3: Credentials blob - parse & non-destructive mutate
 
 **Files:**
 - Create: `Sources/UsageKit/CredentialsBlob.swift`
@@ -555,9 +570,9 @@ git commit -m "feat: usage response decoding and UsageSnapshot mapping"
 
 **Interfaces:**
 - Produces:
-  - `public func countdown(to date: Date?, now: Date) -> String` — `"5h12m"`, `"47m"`, `"3m"`, `"<1m"`, `"4d19h"`, `"—"` when nil/past.
-  - `public func relativeTime(since date: Date, now: Date) -> String` — `"agora"`, `"há 2min"`, `"há 1h"`.
-  - `public func clockLabel(_ date: Date?, now: Date, calendar: Calendar) -> String` — `"07:20"` if same day, else `"22/07 03:00"`; `"—"` when nil.
+  - `public func countdown(to date: Date?, now: Date) -> String` - `"5h12m"`, `"47m"`, `"3m"`, `"<1m"`, `"4d19h"`, `"-"` when nil/past.
+  - `public func relativeTime(since date: Date, now: Date) -> String` - `"agora"`, `"há 2min"`, `"há 1h"`.
+  - `public func clockLabel(_ date: Date?, now: Date, calendar: Calendar) -> String` - `"07:20"` if same day, else `"22/07 03:00"`; `"-"` when nil.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -575,8 +590,8 @@ private let ref = Date(timeIntervalSince1970: 1_700_000_000) // fixed "now"
     #expect(countdown(to: ref.addingTimeInterval(3*60), now: ref) == "3m")
     #expect(countdown(to: ref.addingTimeInterval(30), now: ref) == "<1m")
     #expect(countdown(to: ref.addingTimeInterval(4*86400 + 19*3600), now: ref) == "4d19h")
-    #expect(countdown(to: ref.addingTimeInterval(-10), now: ref) == "—")
-    #expect(countdown(to: nil, now: ref) == "—")
+    #expect(countdown(to: ref.addingTimeInterval(-10), now: ref) == "-")
+    #expect(countdown(to: nil, now: ref) == "-")
 }
 
 @Test func relativeTimeFormats() {
@@ -607,9 +622,9 @@ Expected: FAIL (functions not found).
 import Foundation
 
 public func countdown(to date: Date?, now: Date) -> String {
-    guard let date else { return "—" }
+    guard let date else { return "-" }
     let secs = Int(date.timeIntervalSince(now))
-    if secs <= 0 { return "—" }
+    if secs <= 0 { return "-" }
     let days = secs / 86400
     let hours = (secs % 86400) / 3600
     let mins = (secs % 3600) / 60
@@ -630,7 +645,7 @@ public func relativeTime(since date: Date, now: Date) -> String {
 }
 
 public func clockLabel(_ date: Date?, now: Date, calendar: Calendar = .current) -> String {
-    guard let date else { return "—" }
+    guard let date else { return "-" }
     let f = DateFormatter()
     f.calendar = calendar
     f.timeZone = calendar.timeZone
@@ -974,7 +989,7 @@ git commit -m "feat: HTTP client protocol and UsageClient fetch"
 - Test: `Tests/UsageKitTests/MenuBarTitleTests.swift`
 
 **Interfaces:**
-- Consumes: `UsageSnapshot`, `Severity`, `countdown` (Tasks 4–5).
+- Consumes: `UsageSnapshot`, `Severity`, `countdown` (Tasks 4-5).
 - Produces:
   - `public enum BarState: Equatable { case loading; case loggedOut; case data(UsageSnapshot) }`
   - `public struct MenuBarTitle: Equatable { public let text: String; public let severity: Severity }`
@@ -1005,7 +1020,7 @@ private func snapshot(sessionPct: Int, sessionSev: Severity, weeklySev: Severity
 }
 
 @Test func loggedOutTitle() {
-    #expect(renderMenuBarTitle(.loggedOut, now: now) == MenuBarTitle(text: "◐ —", severity: .normal))
+    #expect(renderMenuBarTitle(.loggedOut, now: now) == MenuBarTitle(text: "◐ -", severity: .normal))
 }
 
 @Test func normalShowsPercentAndCountdown() {
@@ -1066,7 +1081,7 @@ public func renderMenuBarTitle(_ state: BarState, now: Date) -> MenuBarTitle {
     case .loading:
         return MenuBarTitle(text: "◐ …", severity: .normal)
     case .loggedOut:
-        return MenuBarTitle(text: "◐ —", severity: .normal)
+        return MenuBarTitle(text: "◐ -", severity: .normal)
     case .data(let s):
         let combined = max(s.session.severity, s.weekly.severity)
         if s.session.severity == .critical {
@@ -1241,7 +1256,7 @@ git commit -m "feat: real Keychain store and OAuth refresher"
 
 ---
 
-### Task 10: Menu bar app — status item, poller, panel, login item
+### Task 10: Menu bar app - status item, poller, panel, login item
 
 **Files:**
 - Create: `Sources/ClaudeUsageBar/LoginItem.swift`
@@ -1250,7 +1265,7 @@ git commit -m "feat: real Keychain store and OAuth refresher"
 - Modify: `Sources/ClaudeUsageBar/main.swift`
 
 **Interfaces:**
-- Consumes: everything public in `UsageKit` — `UsageClient`, `TokenProvider`, `KeychainStore`, `Keychain`, `OAuthRefresher`, `URLSessionHTTPClient`, `renderMenuBarTitle`, `BarState`, `UsageSnapshot`, `planLabel`, `countdown`, `clockLabel`, `relativeTime`.
+- Consumes: everything public in `UsageKit` - `UsageClient`, `TokenProvider`, `KeychainStore`, `Keychain`, `OAuthRefresher`, `URLSessionHTTPClient`, `renderMenuBarTitle`, `BarState`, `UsageSnapshot`, `planLabel`, `countdown`, `clockLabel`, `relativeTime`.
 
 This is AppKit UI; verified manually in Task 11 (no unit tests).
 
@@ -1600,7 +1615,7 @@ Verify each, against the live `/usage` command in Claude Code:
 - Turn Wi-Fi off, wait ~60s, open panel → shows `⚠ desatualizado …`, does not crash, keeps last numbers. Turn Wi-Fi back on → recovers on next poll.
 - **Sair** removes the menu bar item.
 
-If the Keychain read triggers a macOS permission prompt on first launch, that is expected — approve it (the app reads the same `Claude Code-credentials` item).
+If the Keychain read triggers a macOS permission prompt on first launch, that is expected - approve it (the app reads the same `Claude Code-credentials` item).
 
 - [ ] **Step 5: Commit**
 
@@ -1614,5 +1629,5 @@ git commit -m "feat: app bundle packaging and acceptance checklist"
 ## Self-Review Notes
 
 - **Spec coverage:** Keychain read (T3/T9), silent token refresh preserving other keys (T3/T6/T9), usage fetch+decode with `limits` primary (T4/T7), `UsageSnapshot` model reused by UI (T4), menu bar compact title with severity color + reset countdown incl. critical emphasis (T8/T10), panel with bars/reset/per-model (T10), error/offline stale + not-logged-in states (T4 severity, T10 handling), start-at-login default-on + toggle (T10), `.app` packaging (T11), reusable `UsageKit` boundary for future WidgetKit (whole library has no AppKit import). All covered.
-- **Placeholder scan:** none — every code step is complete.
+- **Placeholder scan:** none - every code step is complete.
 - **Type consistency:** `CredentialsStoring`/`TokenRefreshing`/`RefreshedTokens` defined in T6 and implemented in T9; `HTTPClient` defined in T7 and reused by `OAuthRefresher` in T9; `BarState`/`UsageSnapshot`/`UsageWindow`/`Severity` names consistent across T4/T8/T10; `countdown`/`clockLabel`/`relativeTime` signatures match between T5 and T10 usage.
