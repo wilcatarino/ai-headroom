@@ -9,6 +9,12 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege: only the PR-comment step needs write, and it is guarded to
+# same-repo pull requests (fork PRs get a read-only token and would fail).
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   build-and-test:
     # macos-15 ships Xcode 16 (Swift 6.x) as its default toolchain. The default
@@ -25,7 +31,61 @@ jobs:
         run: swift build
 
       - name: Run tests
-        run: swift run UsageKitTests
+        id: tests
+        run: |
+          set -o pipefail
+          swift run UsageKitTests | tee test-output.txt
 
       - name: Build release bundle
         run: ./Scripts/make-app.sh
+
+      # Rendered on the run's page and reachable from the PR Checks tab. Works
+      # for every PR, including forks, and needs no write permission.
+      - name: Test summary
+        if: always()
+        run: |
+          {
+            echo "## UsageKit tests"
+            echo ""
+            if [ "${{ steps.tests.outcome }}" = "success" ]; then
+              echo "Result: ✅ passed"
+            else
+              echo "Result: ❌ failed"
+            fi
+            echo ""
+            echo '```'
+            tail -n 20 test-output.txt 2>/dev/null || echo "tests did not run (earlier step failed)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # A sticky comment so the test result is visible inline on the PR. Only
+      # runs for pull requests from this repo's own branches: fork PRs receive a
+      # read-only token, so the guard avoids a guaranteed failure there (those
+      # still get the Test summary above).
+      - name: Comment test result on PR
+        if: >-
+          always() &&
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- headroom-test-report -->';
+            let output = 'Tests did not run (an earlier step failed).';
+            try {
+              const raw = fs.readFileSync('test-output.txt', 'utf8').trim();
+              if (raw) output = raw.split('\n').slice(-15).join('\n');
+            } catch (_) {}
+            const ok = '${{ steps.tests.outcome }}' === 'success';
+            const header = ok ? '✅ UsageKit tests passed' : '❌ UsageKit tests failed';
+            const body = `${marker}\n### ${header}\n\n\`\`\`\n${output}\n\`\`\`\n\n_Updated automatically by CI._`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
