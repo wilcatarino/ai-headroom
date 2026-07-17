@@ -28,6 +28,6 @@ public struct UsageClient: Sendable {
             throw UsageClientError.http(response.statusCode)
         }
         let decoded = try UsageResponse.decode(data)
-        return UsageSnapshot.from(decoded, plan: plan(), fetchedAt: now)
+        return UsageSnapshot.from(decoded, provider: .anthropic, plan: plan(), fetchedAt: now)
     }
 }

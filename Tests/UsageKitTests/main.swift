@@ -9,6 +9,7 @@ func runAllTests() async {
     testTimeFormatting()
     await testTokenProvider()
     await testUsageClient()
+    await testProvider()
     testMenuBarTitle()
 }
 

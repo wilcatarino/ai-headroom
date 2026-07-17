@@ -44,12 +44,14 @@ public struct ModelUsage: Equatable, Sendable {
 }
 
 public struct UsageSnapshot: Equatable, Sendable {
+    public let provider: ProviderInfo
     public let plan: String
     public let session: UsageWindow
     public let weekly: UsageWindow
     public let models: [ModelUsage]
     public let fetchedAt: Date
-    public init(plan: String, session: UsageWindow, weekly: UsageWindow, models: [ModelUsage], fetchedAt: Date) {
+    public init(provider: ProviderInfo = .anthropic, plan: String, session: UsageWindow, weekly: UsageWindow, models: [ModelUsage], fetchedAt: Date) {
+        self.provider = provider
         self.plan = plan
         self.session = session
         self.weekly = weekly
@@ -59,7 +61,7 @@ public struct UsageSnapshot: Equatable, Sendable {
 }
 
 extension UsageSnapshot {
-    public static func from(_ r: UsageResponse, plan: String, fetchedAt: Date) -> UsageSnapshot {
+    public static func from(_ r: UsageResponse, provider: ProviderInfo = .anthropic, plan: String, fetchedAt: Date) -> UsageSnapshot {
         let limits = r.limits ?? []
 
         func window(kind: String, fallback: UsageResponse.Window?) -> UsageWindow {
@@ -85,6 +87,6 @@ extension UsageSnapshot {
                               resetsAt: parseAPITimestamp(l.resets_at))
         }
 
-        return UsageSnapshot(plan: plan, session: session, weekly: weekly, models: models, fetchedAt: fetchedAt)
+        return UsageSnapshot(provider: provider, plan: plan, session: session, weekly: weekly, models: models, fetchedAt: fetchedAt)
     }
 }

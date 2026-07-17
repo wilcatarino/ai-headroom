@@ -135,6 +135,10 @@ Fluxo dos dados até a tela:
 | "Iniciar no login" não persiste | App não está em `/Applications` | Rode `./Scripts/make-app.sh --install` |
 | Nada aparece na barra | App não subiu | `pgrep -lf Headroom` e, se vazio, rode o `--install` |
 
+### Aparece como "Desenvolvedor desconhecido"
+
+Em Ajustes do Sistema, na tela de Geral, em Itens de Início e Extensões, o Headroom aparece com o nome correto, mas agrupado embaixo de "Desenvolvedor desconhecido". O nome do app não está errado. O que fica desconhecido é o desenvolvedor, porque o bundle é assinado ad-hoc (`codesign --sign -`), sem um Team ID nem um Developer Name. Este projeto não tem hoje um Developer ID da Apple, então esse agrupamento é esperado e inofensivo. A única forma de sair do grupo "desconhecido" e remover o aviso do Gatekeeper na primeira abertura é assinar com um certificado Developer ID Application e notarizar o app, o que exige uma conta paga do Apple Developer Program. Enquanto essa conta não existir, o comportamento continua o descrito aqui.
+
 Para ver logs de diagnóstico, abra o Console.app e filtre por `Headroom`, ou rode o binário direto e observe o stderr:
 
 ```bash
@@ -146,4 +150,4 @@ swift run -c release Headroom   # Ctrl-C para sair
 - Endpoint de uso: `GET https://api.anthropic.com/api/oauth/usage`, com os headers `Authorization: Bearer <token>` e `anthropic-beta: oauth-2025-04-20`.
 - Refresh OAuth: `POST https://console.anthropic.com/v1/oauth/token` com `grant_type=refresh_token`. Fica atrás de um protocolo e roda só quando o token expira.
 - Keychain: o item é um generic password de serviço `Claude Code-credentials`. Ao gravar tokens renovados, apenas `accessToken`, `refreshToken` e `expiresAt` dentro de `claudeAiOauth` são alterados. O resto do item, como `mcpOAuth`, é preservado.
-- O bundle é assinado ad-hoc (`codesign --sign -`) para o `SMAppService` e as ACLs do Keychain se comportarem de forma previsível.
+- O bundle é assinado ad-hoc (`codesign --sign -`) para o `SMAppService` e as ACLs do Keychain se comportarem de forma previsível. Sem um Developer ID da Apple, o app não tem Team ID, então o macOS o lista como "Desenvolvedor desconhecido".
