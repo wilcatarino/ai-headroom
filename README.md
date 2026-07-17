@@ -1,9 +1,6 @@
 # Claude Usage Bar
 
-App de barra de menu para macOS que mostra quanto do seu plano do Claude Code já
-foi usado, com contagem regressiva até o reset: janela de sessão (5h) e janela
-semanal (7d). Ele usa a conta já autenticada no Claude Code (lê as credenciais
-OAuth do Keychain) e consulta o mesmo endpoint que alimenta o comando `/usage`.
+App de barra de menu para macOS que mostra quanto do seu plano do Claude Code já foi usado, com contagem regressiva até o reset: janela de sessão (5h) e janela semanal (7d). Ele usa a conta já autenticada no Claude Code (lê as credenciais OAuth do Keychain) e consulta o mesmo endpoint que alimenta o comando `/usage`.
 
 ```
 Barra de menu:   ◐ 23% · zera em 4h21m
@@ -15,24 +12,17 @@ Painel (ao clicar):
   Atualizado agora · Atualizar · Iniciar no login · Sair
 ```
 
-A cor do texto na barra indica o nível: normal até 70%, amarelo de 70% a 90% e
-vermelho acima de 90% (ou quando a API sinaliza que você atingiu o teto).
+A cor do texto na barra indica o nível: normal até 70%, amarelo de 70% a 90% e vermelho acima de 90% (ou quando a API sinaliza que você atingiu o teto).
 
 ## Aviso
 
-Projeto independente, sem vínculo com a Anthropic. Ele lê as credenciais que o
-Claude Code já guardou no seu Keychain e consulta um endpoint de uso não
-documentado, que pode mudar ou sair do ar sem aviso. As credenciais são usadas
-apenas localmente, para chamar a própria API da Anthropic, e não são enviadas a
-nenhum outro lugar nem gravadas no repositório. Use por sua conta e risco.
+Projeto independente, sem vínculo com a Anthropic. Ele lê as credenciais que o Claude Code já guardou no seu Keychain e consulta um endpoint de uso não documentado, que pode mudar ou sair do ar sem aviso. As credenciais são usadas apenas localmente, para chamar a própria API da Anthropic, e não são enviadas a nenhum outro lugar nem gravadas no repositório. Use por sua conta e risco.
 
 ## Requisitos
 
 - macOS 13 (Ventura) ou mais novo.
-- Swift toolchain via Command Line Tools (`xcode-select --install`). Não é
-  necessário o Xcode completo.
-- Estar logado no Claude Code. O app lê o item `Claude Code-credentials` do
-  Keychain, criado quando você faz login no Claude Code.
+- Swift toolchain via Command Line Tools (`xcode-select --install`). Não é necessário o Xcode completo.
+- Estar logado no Claude Code. O app lê o item `Claude Code-credentials` do Keychain, criado quando você faz login no Claude Code.
 
 Confirme o toolchain com `swift --version` (deve mostrar Swift 6.x).
 
@@ -44,37 +34,25 @@ Compilar, instalar em `/Applications` e abrir:
 ./Scripts/make-app.sh --install
 ```
 
-Esse é o comando do dia a dia. Sempre que o código mudar, rode de novo para
-atualizar a versão em execução.
+Esse é o comando do dia a dia. Sempre que o código mudar, rode de novo para atualizar a versão em execução.
 
 ### Primeira execução: permissão do Keychain
 
-Na primeira vez que o app lê suas credenciais, o macOS mostra um prompt parecido
-com este:
+Na primeira vez que o app lê suas credenciais, o macOS mostra um prompt parecido com este:
 
-> "ClaudeUsageBar quer usar informações confidenciais armazenadas em
-> 'Claude Code-credentials' no seu keychain."
+> "ClaudeUsageBar quer usar informações confidenciais armazenadas em 'Claude Code-credentials' no seu keychain."
 
-Clique em "Sempre Permitir". O app é um binário diferente do Claude Code, então o
-macOS pede autorização. Estados possíveis na barra enquanto isso:
+Clique em "Sempre Permitir". O app é um binário diferente do Claude Code, então o macOS pede autorização. Estados possíveis na barra enquanto isso:
 
 - `◐ …`: carregando (prompt ainda não aprovado, ou primeira busca em andamento).
-- `◐ ⚠`: a última busca falhou (rede, API ou Keychain). O app tenta de novo
-  sozinho com backoff de 2, 4, 8 e 15 segundos até a primeira carga dar certo.
-  Você também pode forçar pelo item Atualizar.
+- `◐ ⚠`: a última busca falhou (rede, API ou Keychain). O app tenta de novo sozinho com backoff de 2, 4, 8 e 15 segundos até a primeira carga dar certo. Você também pode forçar pelo item Atualizar.
 - `◐ -`: nenhuma credencial encontrada. Verifique se está logado no Claude Code.
 
-Cada `--install` re-assina o app (ad-hoc), então o macOS pode pedir a permissão
-do Keychain novamente após uma atualização. Aprove uma vez e o app se recupera
-sozinho.
+Cada `--install` re-assina o app (ad-hoc), então o macOS pode pedir a permissão do Keychain novamente após uma atualização. Aprove uma vez e o app se recupera sozinho.
 
 ### Iniciar junto com o Mac
 
-A opção "Iniciar no login" vem ligada por padrão na primeira execução. Para valer
-de forma persistente (sobreviver a reboot e aparecer em Ajustes do Sistema >
-Geral > Itens de início de sessão), o app precisa estar em `/Applications`, o que
-o `--install` já garante. Dá para ligar ou desligar isso a qualquer momento pelo
-item "Iniciar no login" no painel.
+A opção "Iniciar no login" vem ligada por padrão na primeira execução. Para valer de forma persistente (sobreviver a reboot e aparecer em Ajustes do Sistema > Geral > Itens de início de sessão), o app precisa estar em `/Applications`, o que o `--install` já garante. Dá para ligar ou desligar isso a qualquer momento pelo item "Iniciar no login" no painel.
 
 ## Modos do script de build
 
@@ -84,8 +62,7 @@ item "Iniciar no login" no painel.
 | `./Scripts/make-app.sh --run` | Compila, encerra a cópia rodando e reabre a partir de `./build`, sem tocar em `/Applications`. |
 | `./Scripts/make-app.sh --install` | Compila, encerra, instala em `/Applications` e reabre. |
 
-Para encerrar o app manualmente, use o item Sair no painel ou rode
-`osascript -e 'quit app "ClaudeUsageBar"'`.
+Para encerrar o app manualmente, use o item Sair no painel ou rode `osascript -e 'quit app "ClaudeUsageBar"'`.
 
 ## Atualização dos dados
 
@@ -93,31 +70,24 @@ Em runtime, o app cuida da atualização sozinho:
 
 - Busca a cada 60 segundos.
 - O item Atualizar (ou `Cmd-R` com o painel aberto) força uma busca imediata.
-- Quando o token expira, o app renova pelo `refreshToken` e regrava no Keychain,
-  preservando os demais campos do item (inclusive tokens de MCP).
-- Sem rede ou com a API fora do ar, mantém o último valor e mostra
-  "desatualizado há X min", recuperando no ciclo seguinte.
+- Quando o token expira, o app renova pelo `refreshToken` e regrava no Keychain, preservando os demais campos do item (inclusive tokens de MCP).
+- Sem rede ou com a API fora do ar, mantém o último valor e mostra "desatualizado há X min", recuperando no ciclo seguinte.
 
 Não há auto-update do próprio app. Para atualizar o binário, rode o `--install`.
 
 ## Testes
 
-A lógica central fica na biblioteca `UsageKit` e é coberta por testes. Como
-XCTest e swift-testing só acompanham o Xcode completo, os testes rodam por um
-runner próprio (um executável), sem depender do Xcode:
+A lógica central fica na biblioteca `UsageKit` e é coberta por testes. Como XCTest e swift-testing só acompanham o Xcode completo, os testes rodam por um runner próprio (um executável), sem depender do Xcode:
 
 ```bash
 swift run UsageKitTests
 ```
 
-A saída esperada é `✓ All N checks passed`. O processo sai com código 0 em
-sucesso e 1 em falha, o que serve para CI.
+A saída esperada é `✓ All N checks passed`. O processo sai com código 0 em sucesso e 1 em falha, o que serve para CI.
 
 ## Arquitetura
 
-Duas camadas. Toda a lógica testável fica em `UsageKit`, sem nenhum
-`import AppKit`, o que mantém a porta aberta para um widget nativo (WidgetKit) no
-futuro reaproveitando a mesma biblioteca.
+Duas camadas. Toda a lógica testável fica em `UsageKit`, sem nenhum `import AppKit`, o que mantém a porta aberta para um widget nativo (WidgetKit) no futuro reaproveitando a mesma biblioteca.
 
 ```
 Sources/
@@ -148,12 +118,9 @@ docs/superpowers/               spec de design e plano de implementação
 Fluxo dos dados até a tela:
 
 1. `KeychainStore` lê `Claude Code-credentials` e decodifica em `Credentials`.
-2. `TokenProvider` verifica a validade. Se expirado, `OAuthRefresher` renova e
-   `KeychainStore` regrava sem apagar outros campos do item.
-3. `UsageClient` chama `GET https://api.anthropic.com/api/oauth/usage` com o token
-   e mapeia a resposta em `UsageSnapshot`.
-4. `renderMenuBarTitle` transforma o snapshot no texto da barra e `UsagePanel`
-   monta o painel. O `AppDelegate` repete isso a cada 60 segundos.
+2. `TokenProvider` verifica a validade. Se expirado, `OAuthRefresher` renova e `KeychainStore` regrava sem apagar outros campos do item.
+3. `UsageClient` chama `GET https://api.anthropic.com/api/oauth/usage` com o token e mapeia a resposta em `UsageSnapshot`.
+4. `renderMenuBarTitle` transforma o snapshot no texto da barra e `UsagePanel` monta o painel. O `AppDelegate` repete isso a cada 60 segundos.
 
 ## Solução de problemas
 
@@ -166,8 +133,7 @@ Fluxo dos dados até a tela:
 | "Iniciar no login" não persiste | App não está em `/Applications` | Rode `./Scripts/make-app.sh --install` |
 | Nada aparece na barra | App não subiu | `pgrep -lf ClaudeUsageBar` e, se vazio, rode o `--install` |
 
-Para ver logs de diagnóstico, abra o Console.app e filtre por `ClaudeUsageBar`,
-ou rode o binário direto e observe o stderr:
+Para ver logs de diagnóstico, abra o Console.app e filtre por `ClaudeUsageBar`, ou rode o binário direto e observe o stderr:
 
 ```bash
 swift run -c release ClaudeUsageBar   # Ctrl-C para sair
@@ -175,14 +141,7 @@ swift run -c release ClaudeUsageBar   # Ctrl-C para sair
 
 ## Notas técnicas
 
-- Endpoint de uso: `GET https://api.anthropic.com/api/oauth/usage`, com os headers
-  `Authorization: Bearer <token>` e `anthropic-beta: oauth-2025-04-20`.
-- Refresh OAuth: `POST https://console.anthropic.com/v1/oauth/token` com
-  `grant_type=refresh_token`. Fica atrás de um protocolo e roda só quando o token
-  expira.
-- Keychain: o item é um generic password de serviço `Claude Code-credentials`. Ao
-  gravar tokens renovados, apenas `accessToken`, `refreshToken` e `expiresAt`
-  dentro de `claudeAiOauth` são alterados. O resto do item, como `mcpOAuth`, é
-  preservado.
-- O bundle é assinado ad-hoc (`codesign --sign -`) para o `SMAppService` e as ACLs
-  do Keychain se comportarem de forma previsível.
+- Endpoint de uso: `GET https://api.anthropic.com/api/oauth/usage`, com os headers `Authorization: Bearer <token>` e `anthropic-beta: oauth-2025-04-20`.
+- Refresh OAuth: `POST https://console.anthropic.com/v1/oauth/token` com `grant_type=refresh_token`. Fica atrás de um protocolo e roda só quando o token expira.
+- Keychain: o item é um generic password de serviço `Claude Code-credentials`. Ao gravar tokens renovados, apenas `accessToken`, `refreshToken` e `expiresAt` dentro de `claudeAiOauth` são alterados. O resto do item, como `mcpOAuth`, é preservado.
+- O bundle é assinado ad-hoc (`codesign --sign -`) para o `SMAppService` e as ACLs do Keychain se comportarem de forma previsível.

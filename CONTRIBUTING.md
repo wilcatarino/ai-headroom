@@ -3,8 +3,7 @@
 ## Ambiente
 
 - macOS 13 ou mais novo.
-- Swift toolchain via Command Line Tools (`xcode-select --install`). O Xcode
-  completo não é necessário.
+- Swift toolchain via Command Line Tools (`xcode-select --install`). O Xcode completo não é necessário.
 
 ## Fluxo
 
@@ -22,17 +21,12 @@
 
 - Toda lógica testável vive em `Sources/UsageKit` e não importa AppKit.
 - A camada de UI (`Sources/ClaudeUsageBar`) é fina: status item, painel e wiring.
-- Dependências de rede, Keychain e relógio ficam atrás de protocolos, o que
-  permite testar com fakes. Veja `Tests/UsageKitTests`.
+- Dependências de rede, Keychain e relógio ficam atrás de protocolos, o que permite testar com fakes. Veja `Tests/UsageKitTests`.
 
 ## Testes
 
-Os testes usam um runner próprio (executável), porque XCTest e swift-testing só
-acompanham o Xcode completo. Para adicionar um teste, escreva uma função em
-`Tests/UsageKitTests` e registre a chamada em `main.swift`.
+Os testes usam um runner próprio (executável), porque XCTest e swift-testing só acompanham o Xcode completo. Para adicionar um teste, escreva uma função em `Tests/UsageKitTests` e registre a chamada em `main.swift`.
 
 ## Segurança
 
-Nunca faça commit de tokens reais. As fixtures usam apenas placeholders
-(`sk-ant-oat01-OLD`). O app lê credenciais do Keychain em runtime e nada é
-persistido no repositório.
+Nunca faça commit de tokens reais. As fixtures usam apenas placeholders (`sk-ant-oat01-OLD`). O app lê credenciais do Keychain em runtime e nada é persistido no repositório.
