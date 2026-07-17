@@ -1,2 +1,7 @@
-import UsageKit
-print(UsageKit.marker)
+import AppKit
+
+let app = NSApplication.shared
+app.setActivationPolicy(.accessory)   // no Dock icon
+let delegate = AppDelegate()
+app.delegate = delegate
+app.run()

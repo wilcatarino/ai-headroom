@@ -2,7 +2,7 @@ import Foundation
 
 public enum UsageClientError: Error { case http(Int) }
 
-public struct UsageClient {
+public struct UsageClient: Sendable {
     static let usageURL = URL(string: "https://api.anthropic.com/api/oauth/usage")!
 
     private let http: HTTPClient
