@@ -3,6 +3,8 @@ import Foundation
 // Registry of all test functions. Add new ones here as tasks land.
 func runAllTests() async {
     testPackageBuilds()
+    testCredentials()
+    testCredentialsBlob()
 }
 
 await runAllTests()
