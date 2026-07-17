@@ -1,6 +1,8 @@
-# Claude Usage Bar
+# Headroom
 
-App de barra de menu para macOS que mostra quanto do seu plano do Claude Code já foi usado, com contagem regressiva até o reset: janela de sessão (5h) e janela semanal (7d). Ele usa a conta já autenticada no Claude Code (lê as credenciais OAuth do Keychain) e consulta o mesmo endpoint que alimenta o comando `/usage`.
+Headroom é um app de barra de menu para macOS que mostra, de relance, quanto dos limites das suas ferramentas de IA ainda resta. Ele começa com o Claude Code e foi desenhado para receber outros provedores depois.
+
+Para o Claude Code, mostra quanto do plano já foi usado, com contagem regressiva até o reset: janela de sessão (5h) e janela semanal (7d). Usa a conta já autenticada no Claude Code (lê as credenciais OAuth do Keychain) e consulta o mesmo endpoint que alimenta o comando `/usage`.
 
 ```
 Barra de menu:   ◐ 23% · zera em 4h21m
@@ -12,7 +14,7 @@ Painel (ao clicar):
   Atualizado agora · Atualizar · Iniciar no login · Sair
 ```
 
-A cor do texto na barra indica o nível: normal até 70%, amarelo de 70% a 90% e vermelho acima de 90% (ou quando a API sinaliza que você atingiu o teto).
+A cor do texto na barra indica o nível: normal até 70%, laranja de 70% a 90% e vermelho acima de 90% (ou quando a API sinaliza que você atingiu o teto).
 
 ## Aviso
 
@@ -40,7 +42,7 @@ Esse é o comando do dia a dia. Sempre que o código mudar, rode de novo para at
 
 Na primeira vez que o app lê suas credenciais, o macOS mostra um prompt parecido com este:
 
-> "ClaudeUsageBar quer usar informações confidenciais armazenadas em 'Claude Code-credentials' no seu keychain."
+> "Headroom quer usar informações confidenciais armazenadas em 'Claude Code-credentials' no seu keychain."
 
 Clique em "Sempre Permitir". O app é um binário diferente do Claude Code, então o macOS pede autorização. Estados possíveis na barra enquanto isso:
 
@@ -62,7 +64,7 @@ A opção "Iniciar no login" vem ligada por padrão na primeira execução. Para
 | `./Scripts/make-app.sh --run` | Compila, encerra a cópia rodando e reabre a partir de `./build`, sem tocar em `/Applications`. |
 | `./Scripts/make-app.sh --install` | Compila, encerra, instala em `/Applications` e reabre. |
 
-Para encerrar o app manualmente, use o item Sair no painel ou rode `osascript -e 'quit app "ClaudeUsageBar"'`.
+Para encerrar o app manualmente, use o item Sair no painel ou rode `osascript -e 'quit app "Headroom"'`.
 
 ## Atualização dos dados
 
@@ -104,7 +106,7 @@ Sources/
     UsageSnapshot.swift         modelo normalizado (sessão, semana, por modelo)
     TimeFormatting.swift        contagem regressiva, tempo relativo e horário
     MenuBarTitle.swift          renderização pura do texto da barra (testada)
-  ClaudeUsageBar/               app AppKit fino (barra de menu)
+  Headroom/               app AppKit fino (barra de menu)
     main.swift                  bootstrap do NSApplication (accessory, sem Dock)
     AppDelegate.swift           status item, poller de 60s, estados e wiring
     UsagePanelView.swift        painel com barras de progresso e resets
@@ -131,12 +133,12 @@ Fluxo dos dados até a tela:
 | `◐ -` | App não achou credenciais | Faça login no Claude Code e use Atualizar |
 | "desatualizado há X min" no painel | Rede ou API indisponível | Normal, recupera sozinho no próximo ciclo |
 | "Iniciar no login" não persiste | App não está em `/Applications` | Rode `./Scripts/make-app.sh --install` |
-| Nada aparece na barra | App não subiu | `pgrep -lf ClaudeUsageBar` e, se vazio, rode o `--install` |
+| Nada aparece na barra | App não subiu | `pgrep -lf Headroom` e, se vazio, rode o `--install` |
 
-Para ver logs de diagnóstico, abra o Console.app e filtre por `ClaudeUsageBar`, ou rode o binário direto e observe o stderr:
+Para ver logs de diagnóstico, abra o Console.app e filtre por `Headroom`, ou rode o binário direto e observe o stderr:
 
 ```bash
-swift run -c release ClaudeUsageBar   # Ctrl-C para sair
+swift run -c release Headroom   # Ctrl-C para sair
 ```
 
 ## Notas técnicas

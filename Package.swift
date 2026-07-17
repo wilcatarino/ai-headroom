@@ -6,12 +6,12 @@ import PackageDescription
 // suite is a plain executable target with a tiny assertion harness. Run it with
 // `swift run UsageKitTests`.
 let package = Package(
-    name: "ClaudeUsageBar",
+    name: "Headroom",
     platforms: [.macOS(.v13)],
     targets: [
         .target(name: "UsageKit"),
         .executableTarget(
-            name: "ClaudeUsageBar",
+            name: "Headroom",
             dependencies: ["UsageKit"]
         ),
         .executableTarget(

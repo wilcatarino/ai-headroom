@@ -3,6 +3,8 @@
 **Date:** 2026-07-17
 **Status:** Implemented (see "Implementation notes" at the end for deviations from this design)
 
+> **Rename:** the product was later named **Headroom** (repo `ai-headroom`), reframed as a multi-provider usage meter that starts with Claude Code. Where this document says `ClaudeUsageBar`, the shipped app and executable are `Headroom`. The `UsageKit` library name is unchanged.
+
 ## Goal
 
 A fully functional macOS menu bar app that shows, at a glance, how much of the authenticated Claude Code subscription plan the user has consumed. This is the same data surfaced by the `/usage` command: the 5-hour session window and the 7-day weekly window, with reset times and countdowns. The primary question it answers is "am I about to hit my limit, and when does it reset?".

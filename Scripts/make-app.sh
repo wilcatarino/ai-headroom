@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Builds the ClaudeUsageBar.app bundle.
+# Builds the Headroom.app bundle.
 #
 # Usage:
 #   ./Scripts/make-app.sh                 build the bundle into ./build
@@ -8,8 +8,8 @@
 #   ./Scripts/make-app.sh --run           build, then (re)launch from ./build
 #
 # --install is the recommended day-to-day flow: it quits any running copy,
-# refreshes /Applications/ClaudeUsageBar.app, and opens the new build so the
-# menu bar item comes back with your latest changes.
+# refreshes /Applications/Headroom.app, and opens the new build so the menu bar
+# item comes back with your latest changes.
 #
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -22,7 +22,7 @@ case "${1:-}" in
     *) echo "Unknown option: $1"; echo "Use --install, --run, or no argument."; exit 1 ;;
 esac
 
-APP_NAME="ClaudeUsageBar"
+APP_NAME="Headroom"
 BUILD_APP="build/${APP_NAME}.app"
 INSTALLED_APP="/Applications/${APP_NAME}.app"
 

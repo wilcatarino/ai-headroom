@@ -20,7 +20,7 @@
 ## Organização do código
 
 - Toda lógica testável vive em `Sources/UsageKit` e não importa AppKit.
-- A camada de UI (`Sources/ClaudeUsageBar`) é fina: status item, painel e wiring.
+- A camada de UI (`Sources/Headroom`) é fina: status item, painel e wiring.
 - Dependências de rede, Keychain e relógio ficam atrás de protocolos, o que permite testar com fakes. Veja `Tests/UsageKitTests`.
 
 ## Testes
@@ -29,14 +29,14 @@ Os testes usam um runner próprio (executável), porque XCTest e swift-testing s
 
 ## Preview de cores e estados
 
-Para revisar as cores de severidade (warning, critical) sem esperar o uso real subir, rode o binário direto com a variável `CUB_PREVIEW`, que força um estado e pula a busca ao vivo:
+Para revisar as cores de severidade (warning, critical) sem esperar o uso real subir, rode o binário direto com a variável `HEADROOM_PREVIEW`, que força um estado e pula a busca ao vivo:
 
 ```bash
-CUB_PREVIEW=warning "$(swift build --show-bin-path)/ClaudeUsageBar"
-CUB_PREVIEW=critical "$(swift build --show-bin-path)/ClaudeUsageBar"
+HEADROOM_PREVIEW=warning "$(swift build --show-bin-path)/Headroom"
+HEADROOM_PREVIEW=critical "$(swift build --show-bin-path)/Headroom"
 ```
 
-As cores ficam centralizadas em `Sources/ClaudeUsageBar/Palette.swift`. Observação: o `open` do macOS não repassa variáveis de ambiente para o app, por isso o preview roda o binário direto.
+As cores ficam centralizadas em `Sources/Headroom/Palette.swift`. Observação: o `open` do macOS não repassa variáveis de ambiente para o app, por isso o preview roda o binário direto.
 
 ## Segurança
 

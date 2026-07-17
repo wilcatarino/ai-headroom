@@ -3,7 +3,7 @@ import UsageKit
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private func log(_ msg: String) { NSLog("[ClaudeUsageBar] \(msg)") }
+    private func log(_ msg: String) { NSLog("[Headroom] \(msg)") }
 
     private var statusItem: NSStatusItem!
     private var timer: Timer?
@@ -38,8 +38,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Preview mode: force a severity state so colors can be reviewed live,
-        // e.g. `CUB_PREVIEW=warning open -a ClaudeUsageBar`. Skips live fetching.
-        if let preview = ProcessInfo.processInfo.environment["CUB_PREVIEW"] {
+        // e.g. `HEADROOM_PREVIEW=warning` when running the binary directly.
+        // Skips live fetching.
+        if let preview = ProcessInfo.processInfo.environment["HEADROOM_PREVIEW"] {
             renderPreview(preview)
             return
         }
