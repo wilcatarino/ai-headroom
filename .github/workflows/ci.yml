@@ -11,7 +11,10 @@ concurrency:
 
 jobs:
   build-and-test:
-    runs-on: macos-14
+    # macos-15 ships Xcode 16 (Swift 6.x) as its default toolchain. The default
+    # on macos-14 is Swift 5.10, which cannot build a swift-tools-version:6.0
+    # package (the previous CI failure).
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
 
