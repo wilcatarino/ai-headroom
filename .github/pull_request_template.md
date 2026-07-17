@@ -1,22 +1,22 @@
-## O que muda
+## What changes
 
-<!-- Descreva a mudança em uma ou duas frases. -->
+<!-- Describe the change in a sentence or two. -->
 
-## Tipo
+## Type
 
-- [ ] Correção
-- [ ] Nova funcionalidade
-- [ ] Documentação
-- [ ] Outro
+- [ ] Fix
+- [ ] New feature
+- [ ] Documentation
+- [ ] Other
 
 ## Checklist
 
-- [ ] `swift build` passa
-- [ ] `swift run UsageKitTests` passa, com todos os checks verdes
-- [ ] Lógica testável ficou em `Sources/UsageKit`, sem `import AppKit`
-- [ ] Sem em dash nem en dash na documentação
-- [ ] Sem tokens ou credenciais reais no diff
+- [ ] `swift build` passes
+- [ ] `swift run UsageKitTests` passes, with all checks green
+- [ ] Testable logic stayed in `Sources/UsageKit`, with no `import AppKit`
+- [ ] No em dash or en dash in documentation
+- [ ] No real tokens or credentials in the diff
 
-## Notas
+## Notes
 
-<!-- Contexto, prints se for UI, decisões de design. -->
+<!-- Context, screenshots for UI changes, design decisions. -->
