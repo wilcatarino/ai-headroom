@@ -30,7 +30,7 @@ public func renderMenuBarTitle(_ state: BarState, now: Date) -> MenuBarTitle {
     case .loading:
         return MenuBarTitle(text: "◐ …", severity: .normal)
     case .loggedOut:
-        return MenuBarTitle(text: "◐ —", severity: .normal)
+        return MenuBarTitle(text: "◐ -", severity: .normal)
     case .error:
         return MenuBarTitle(text: "◐ ⚠", severity: .warning)
     case .data(let s):

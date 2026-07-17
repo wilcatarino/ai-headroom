@@ -9,8 +9,8 @@ func testTimeFormatting() {
     T.equal(countdown(to: ref.addingTimeInterval(3*60), now: ref), "3m")
     T.equal(countdown(to: ref.addingTimeInterval(30), now: ref), "<1m")
     T.equal(countdown(to: ref.addingTimeInterval(4*86400 + 19*3600), now: ref), "4d19h")
-    T.equal(countdown(to: ref.addingTimeInterval(-10), now: ref), "—")
-    T.equal(countdown(to: nil, now: ref), "—")
+    T.equal(countdown(to: ref.addingTimeInterval(-10), now: ref), "-")
+    T.equal(countdown(to: nil, now: ref), "-")
 
     T.equal(relativeTime(since: ref, now: ref.addingTimeInterval(20)), "agora")
     T.equal(relativeTime(since: ref, now: ref.addingTimeInterval(120)), "há 2min")

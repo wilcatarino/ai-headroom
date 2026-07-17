@@ -12,7 +12,7 @@ enum T {
 
     static func equal<V: Equatable>(_ got: V, _ want: V, _ msg: String = "", line: UInt = #line) {
         if got == want { passed += 1 }
-        else { failures += 1; print("  ✗ FAIL [\(line)]: \(msg) — got \(got), want \(want)") }
+        else { failures += 1; print("  ✗ FAIL [\(line)]: \(msg) - got \(got), want \(want)") }
     }
 
     static func fixtureData(_ name: String) -> Data {

@@ -1,9 +1,9 @@
 import Foundation
 
 public func countdown(to date: Date?, now: Date) -> String {
-    guard let date else { return "—" }
+    guard let date else { return "-" }
     let secs = Int(date.timeIntervalSince(now))
-    if secs <= 0 { return "—" }
+    if secs <= 0 { return "-" }
     let days = secs / 86400
     let hours = (secs % 86400) / 3600
     let mins = (secs % 3600) / 60
@@ -24,7 +24,7 @@ public func relativeTime(since date: Date, now: Date) -> String {
 }
 
 public func clockLabel(_ date: Date?, now: Date, calendar: Calendar = .current) -> String {
-    guard let date else { return "—" }
+    guard let date else { return "-" }
     let f = DateFormatter()
     f.calendar = calendar
     f.timeZone = calendar.timeZone

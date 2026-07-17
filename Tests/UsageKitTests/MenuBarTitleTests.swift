@@ -15,7 +15,7 @@ func testMenuBarTitle() {
     let now = Date(timeIntervalSince1970: 1_700_000_000)
 
     T.equal(renderMenuBarTitle(.loading, now: now), MenuBarTitle(text: "◐ …", severity: .normal))
-    T.equal(renderMenuBarTitle(.loggedOut, now: now), MenuBarTitle(text: "◐ —", severity: .normal))
+    T.equal(renderMenuBarTitle(.loggedOut, now: now), MenuBarTitle(text: "◐ -", severity: .normal))
     T.equal(renderMenuBarTitle(.error, now: now), MenuBarTitle(text: "◐ ⚠", severity: .warning))
 
     let normal = renderMenuBarTitle(.data(snap(sessionPct: 8, sessionSev: .normal, now: now)), now: now)
