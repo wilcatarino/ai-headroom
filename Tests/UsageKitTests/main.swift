@@ -7,6 +7,9 @@ func runAllTests() async {
     testCredentialsBlob()
     testUsageSnapshot()
     testTimeFormatting()
+    await testTokenProvider()
+    await testUsageClient()
+    testMenuBarTitle()
 }
 
 await runAllTests()
