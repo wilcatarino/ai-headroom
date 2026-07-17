@@ -5,6 +5,8 @@ func runAllTests() async {
     testPackageBuilds()
     testCredentials()
     testCredentialsBlob()
+    testUsageSnapshot()
+    testTimeFormatting()
 }
 
 await runAllTests()
