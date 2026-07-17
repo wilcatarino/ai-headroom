@@ -1,6 +1,6 @@
 import Foundation
 
-public enum Severity: String, Comparable {
+public enum Severity: String, Comparable, Sendable {
     case normal, warning, critical
     private var rank: Int { switch self { case .normal: 0; case .warning: 1; case .critical: 2 } }
     public static func < (a: Severity, b: Severity) -> Bool { a.rank < b.rank }
@@ -19,7 +19,7 @@ public func severity(from serverValue: String?, percent: Int) -> Severity {
     }
 }
 
-public struct UsageWindow: Equatable {
+public struct UsageWindow: Equatable, Sendable {
     public let percent: Int
     public let severity: Severity
     public let resetsAt: Date?
@@ -30,7 +30,7 @@ public struct UsageWindow: Equatable {
     }
 }
 
-public struct ModelUsage: Equatable {
+public struct ModelUsage: Equatable, Sendable {
     public let name: String
     public let percent: Int
     public let severity: Severity
@@ -43,7 +43,7 @@ public struct ModelUsage: Equatable {
     }
 }
 
-public struct UsageSnapshot: Equatable {
+public struct UsageSnapshot: Equatable, Sendable {
     public let plan: String
     public let session: UsageWindow
     public let weekly: UsageWindow
