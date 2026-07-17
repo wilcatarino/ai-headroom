@@ -20,7 +20,7 @@ enum UsagePanel {
             stack.addArrangedSubview(label("Faça login no Claude Code", .secondaryLabelColor))
         case .error:
             stack.addArrangedSubview(label("Claude Code", .labelColor, bold: true))
-            stack.addArrangedSubview(label("Não foi possível atualizar.", .systemYellow))
+            stack.addArrangedSubview(label("Não foi possível atualizar.", Palette.warning))
             stack.addArrangedSubview(label("Tentando de novo…", .secondaryLabelColor))
         case .data(let s):
             stack.addArrangedSubview(label("Claude Code · Plano \(s.plan)", .labelColor, bold: true))
@@ -36,7 +36,7 @@ enum UsagePanel {
             let stamp = stale
                 ? "⚠ desatualizado \(relativeTime(since: s.fetchedAt, now: now))"
                 : "Atualizado \(relativeTime(since: s.fetchedAt, now: now))"
-            stack.addArrangedSubview(label(stamp, stale ? .systemYellow : .secondaryLabelColor))
+            stack.addArrangedSubview(label(stamp, stale ? Palette.warning : .secondaryLabelColor))
         }
 
         let width: CGFloat = 320
@@ -53,7 +53,7 @@ enum UsagePanel {
     }
 
     private static func color(for s: Severity) -> NSColor {
-        switch s { case .normal: .controlAccentColor; case .warning: .systemYellow; case .critical: .systemRed }
+        Palette.panelColor(for: s)
     }
 
     private static func windowRow(title: String, w: UsageWindow, now: Date) -> NSView {

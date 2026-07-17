@@ -27,6 +27,17 @@
 
 Os testes usam um runner próprio (executável), porque XCTest e swift-testing só acompanham o Xcode completo. Para adicionar um teste, escreva uma função em `Tests/UsageKitTests` e registre a chamada em `main.swift`.
 
+## Preview de cores e estados
+
+Para revisar as cores de severidade (warning, critical) sem esperar o uso real subir, rode o binário direto com a variável `CUB_PREVIEW`, que força um estado e pula a busca ao vivo:
+
+```bash
+CUB_PREVIEW=warning "$(swift build --show-bin-path)/ClaudeUsageBar"
+CUB_PREVIEW=critical "$(swift build --show-bin-path)/ClaudeUsageBar"
+```
+
+As cores ficam centralizadas em `Sources/ClaudeUsageBar/Palette.swift`. Observação: o `open` do macOS não repassa variáveis de ambiente para o app, por isso o preview roda o binário direto.
+
 ## Segurança
 
 Nunca faça commit de tokens reais. As fixtures usam apenas placeholders (`sk-ant-oat01-OLD`). O app lê credenciais do Keychain em runtime e nada é persistido no repositório.

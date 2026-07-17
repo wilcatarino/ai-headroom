@@ -37,11 +37,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             UserDefaults.standard.set(true, forKey: "didSetInitialLoginItem")
         }
 
+        // Preview mode: force a severity state so colors can be reviewed live,
+        // e.g. `CUB_PREVIEW=warning open -a ClaudeUsageBar`. Skips live fetching.
+        if let preview = ProcessInfo.processInfo.environment["CUB_PREVIEW"] {
+            renderPreview(preview)
+            return
+        }
+
         render(state: .loading)
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.refresh() }
         }
+    }
+
+    private func renderPreview(_ preview: String) {
+        let now = Date()
+        let sev: Severity = preview == "critical" ? .critical : .warning
+        let snap = UsageSnapshot(
+            plan: "Max (20x) · preview \(sev)",
+            session: UsageWindow(percent: sev == .critical ? 95 : 82, severity: sev,
+                                 resetsAt: now.addingTimeInterval(2 * 3600 + 10 * 60)),
+            weekly: UsageWindow(percent: 60, severity: .warning,
+                                resetsAt: now.addingTimeInterval(3 * 86400)),
+            models: [],
+            fetchedAt: now)
+        lastSnapshot = snap
+        render(state: .data(snap))
     }
 
     private func refresh() {
@@ -101,14 +123,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func attributedTitle(_ title: MenuBarTitle) -> NSAttributedString {
-        let color: NSColor
-        switch title.severity {
-        case .normal: color = .labelColor
-        case .warning: color = .systemYellow
-        case .critical: color = .systemRed
-        }
         return NSAttributedString(string: title.text, attributes: [
-            .foregroundColor: color,
+            .foregroundColor: Palette.titleColor(for: title.severity),
             .font: NSFont.menuBarFont(ofSize: 0),
         ])
     }
