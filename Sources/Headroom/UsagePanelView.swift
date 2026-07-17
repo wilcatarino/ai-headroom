@@ -4,7 +4,9 @@ import UsageKit
 /// Builds the rich content view shown at the top of the status menu.
 @MainActor
 enum UsagePanel {
-    static func makeView(state: BarState, now: Date) -> NSView {
+    /// One section per provider, stacked with a divider between them. With a
+    /// single provider this looks exactly like the old single-provider panel.
+    static func makeView(items: [(info: ProviderInfo, state: BarState)], now: Date) -> NSView {
         let stack = NSStackView()
         stack.orientation = .vertical
         stack.alignment = .leading
@@ -12,18 +14,38 @@ enum UsagePanel {
         stack.edgeInsets = NSEdgeInsets(top: 12, left: 14, bottom: 12, right: 14)
         stack.translatesAutoresizingMaskIntoConstraints = false
 
+        for (idx, item) in items.enumerated() {
+            if idx > 0 { stack.addArrangedSubview(divider()) }
+            addSection(to: stack, info: item.info, state: item.state, now: now)
+        }
+
+        let width: CGFloat = 320
+        let container = NSView()
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            stack.topAnchor.constraint(equalTo: container.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        container.frame = NSRect(x: 0, y: 0, width: width, height: stack.fittingSize.height)
+        return container
+    }
+
+    private static func addSection(to stack: NSStackView, info: ProviderInfo, state: BarState, now: Date) {
         switch state {
         case .loading:
+            stack.addArrangedSubview(label(info.displayName, .labelColor, bold: true))
             stack.addArrangedSubview(label("Carregando…", .secondaryLabelColor))
         case .loggedOut:
-            stack.addArrangedSubview(label("Claude Code", .labelColor, bold: true))
-            stack.addArrangedSubview(label("Faça login no Claude Code", .secondaryLabelColor))
+            stack.addArrangedSubview(label(info.displayName, .labelColor, bold: true))
+            stack.addArrangedSubview(label("Faça login no \(info.displayName)", .secondaryLabelColor))
         case .error:
-            stack.addArrangedSubview(label("Claude Code", .labelColor, bold: true))
+            stack.addArrangedSubview(label(info.displayName, .labelColor, bold: true))
             stack.addArrangedSubview(label("Não foi possível atualizar.", Palette.warning))
             stack.addArrangedSubview(label("Tentando de novo…", .secondaryLabelColor))
         case .data(let s):
-            stack.addArrangedSubview(label("Claude Code · Plano \(s.plan)", .labelColor, bold: true))
+            stack.addArrangedSubview(label("\(info.displayName) · Plano \(s.plan)", .labelColor, bold: true))
             stack.addArrangedSubview(windowRow(title: "Sessão (5h)", w: s.session, now: now))
             stack.addArrangedSubview(windowRow(title: "Semana (7d)", w: s.weekly, now: now))
             for m in s.models {
@@ -38,18 +60,14 @@ enum UsagePanel {
                 : "Atualizado \(relativeTime(since: s.fetchedAt, now: now))"
             stack.addArrangedSubview(label(stamp, stale ? Palette.warning : .secondaryLabelColor))
         }
+    }
 
-        let width: CGFloat = 320
-        let container = NSView()
-        container.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: container.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-        ])
-        container.frame = NSRect(x: 0, y: 0, width: width, height: stack.fittingSize.height)
-        return container
+    private static func divider() -> NSView {
+        let line = NSBox()
+        line.boxType = .separator
+        line.translatesAutoresizingMaskIntoConstraints = false
+        line.widthAnchor.constraint(equalToConstant: 292).isActive = true
+        return line
     }
 
     private static func color(for s: Severity) -> NSColor {
