@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-public struct Keychain {
+public struct Keychain: Sendable {
     public let service: String
     public init(service: String) { self.service = service }
 
