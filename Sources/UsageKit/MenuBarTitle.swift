@@ -3,6 +3,8 @@ import Foundation
 public enum BarState: Equatable {
     case loading
     case loggedOut
+    /// A fetch failed and no prior snapshot exists; the app is retrying.
+    case error
     case data(UsageSnapshot)
 }
 
@@ -29,6 +31,8 @@ public func renderMenuBarTitle(_ state: BarState, now: Date) -> MenuBarTitle {
         return MenuBarTitle(text: "◐ …", severity: .normal)
     case .loggedOut:
         return MenuBarTitle(text: "◐ —", severity: .normal)
+    case .error:
+        return MenuBarTitle(text: "◐ ⚠", severity: .warning)
     case .data(let s):
         let combined = max(s.session.severity, s.weekly.severity)
         if s.session.severity == .critical {

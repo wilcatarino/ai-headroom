@@ -59,9 +59,17 @@ Clique em **"Sempre Permitir"** (Always Allow). Isso é esperado — o app é um
 binário diferente do Claude Code, então o macOS pede autorização uma única vez.
 Depois disso ele nunca mais pergunta.
 
-- Enquanto o prompt não é aprovado, a barra fica em `◐ …`.
+- Enquanto o prompt não é aprovado, a barra fica em `◐ …` (carregando).
+- Se aparecer `◐ ⚠`, a última busca falhou (rede/API/Keychain). O app **tenta de
+  novo sozinho** em alguns segundos (backoff 2/4/8/15s) até a primeira carga dar
+  certo; você também pode forçar com **↻ Atualizar**.
 - Se aparecer `◐ —`, o app não encontrou credenciais → verifique se está logado
   no Claude Code.
+
+> **Nota sobre updates:** cada `--install` re-assina o app (ad-hoc), então o macOS
+> pode pedir a permissão do Keychain de novo na primeira execução após atualizar.
+> Aprove uma vez ("Sempre Permitir") e o app se recupera sozinho — não precisa
+> mais clicar em Atualizar manualmente.
 
 ### Iniciar junto com o Mac
 
@@ -169,7 +177,15 @@ docs/superpowers/               ← spec de design e plano de implementação
 | Sintoma | Causa provável | O que fazer |
 |---|---|---|
 | Barra travada em `◐ …` | Prompt do Keychain não aprovado, ou sem rede | Aprove o prompt ("Sempre Permitir"); confira a internet |
+| `◐ ⚠` | Falha na busca (rede/API/Keychain) | Recupera sozinho (retry com backoff); ou clique em ↻ Atualizar |
 | `◐ —` | App não achou credenciais | Faça login no Claude Code e clique em ↻ Atualizar |
+
+Para ver logs de diagnóstico: abra o **Console.app** e filtre por `ClaudeUsageBar`,
+ou rode o binário direto e observe o stderr:
+
+```bash
+swift run -c release ClaudeUsageBar   # Ctrl-C para sair
+```
 | "⚠ desatualizado há X min" no painel | Rede/API indisponível | Normal; recupera sozinho. Force com ↻ Atualizar |
 | "Iniciar no login" não persiste | App não está em `/Applications` | Rode `./Scripts/make-app.sh --install` |
 | Nada aparece na barra | App não subiu | `pgrep -lf ClaudeUsageBar`; se vazio, rode o `--install` |

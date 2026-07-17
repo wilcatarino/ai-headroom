@@ -18,6 +18,10 @@ enum UsagePanel {
         case .loggedOut:
             stack.addArrangedSubview(label("Claude Code", .labelColor, bold: true))
             stack.addArrangedSubview(label("Faça login no Claude Code", .secondaryLabelColor))
+        case .error:
+            stack.addArrangedSubview(label("Claude Code", .labelColor, bold: true))
+            stack.addArrangedSubview(label("Não foi possível atualizar.", .systemYellow))
+            stack.addArrangedSubview(label("Tentando de novo…", .secondaryLabelColor))
         case .data(let s):
             stack.addArrangedSubview(label("Claude Code · Plano \(s.plan)", .labelColor, bold: true))
             stack.addArrangedSubview(windowRow(title: "Sessão (5h)", w: s.session, now: now))

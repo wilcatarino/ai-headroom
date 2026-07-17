@@ -3,11 +3,21 @@ import UsageKit
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private func log(_ msg: String) { NSLog("[ClaudeUsageBar] \(msg)") }
+
     private var statusItem: NSStatusItem!
     private var timer: Timer?
     private var client: UsageClient!
     private var lastSnapshot: UsageSnapshot?
     private var loggedOut = false
+    private var hasError = false
+
+    /// Fast retry schedule used until the first successful load, so a transient
+    /// cold-start failure (keychain re-auth, network not ready) self-heals in
+    /// seconds instead of waiting for the 60s poll.
+    private static let initialRetryDelays: [TimeInterval] = [2, 4, 8, 15]
+    private var initialRetryIndex = 0
+    private var didLoadOnce = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let http = URLSessionHTTPClient()
@@ -40,20 +50,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let snap = try await self.client.fetch(now: Date())
                 self.lastSnapshot = snap
                 self.loggedOut = false
+                self.hasError = false
+                self.didLoadOnce = true
+                self.initialRetryIndex = 0
+                self.log("refresh ok: session \(snap.session.percent)% weekly \(snap.weekly.percent)%")
                 self.render(state: .data(snap))
             } catch TokenError.notLoggedIn {
+                self.log("refresh: not logged in")
                 self.loggedOut = true
+                self.hasError = false
                 self.render(state: .loggedOut)
+                self.scheduleInitialRetryIfNeeded()
             } catch {
-                // keep last snapshot; panel shows the stale marker
+                self.log("refresh failed: \(error)")
+                self.loggedOut = false
+                self.hasError = true
+                // If we already had data, keep showing it (stale). Otherwise
+                // surface the error state and retry quickly.
                 self.render(state: self.currentState())
+                self.scheduleInitialRetryIfNeeded()
             }
         }
     }
 
+    /// Before the first successful load, keep retrying on a short backoff so the
+    /// UI doesn't sit on "Carregando…"/error until the next 60s tick.
+    private func scheduleInitialRetryIfNeeded() {
+        guard !didLoadOnce, initialRetryIndex < Self.initialRetryDelays.count else { return }
+        let delay = Self.initialRetryDelays[initialRetryIndex]
+        initialRetryIndex += 1
+        self.log("scheduling initial retry in \(delay)s")
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self, !self.didLoadOnce else { return }
+            self.refresh()
+        }
+    }
+
     private func currentState() -> BarState {
-        if loggedOut { return .loggedOut }
         if let s = lastSnapshot { return .data(s) }
+        if loggedOut { return .loggedOut }
+        if hasError { return .error }
         return .loading
     }
 
