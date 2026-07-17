@@ -7,7 +7,7 @@
 
 ## Fluxo
 
-1. Crie um branch a partir de `main`.
+1. Crie um branch a partir de `master`.
 2. Rode os testes antes de abrir o PR:
 
    ```bash
