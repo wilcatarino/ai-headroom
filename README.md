@@ -18,6 +18,14 @@ Painel (ao clicar):
 A cor do texto na barra indica o nível: normal até 70%, amarelo de 70% a 90% e
 vermelho acima de 90% (ou quando a API sinaliza que você atingiu o teto).
 
+## Aviso
+
+Projeto independente, sem vínculo com a Anthropic. Ele lê as credenciais que o
+Claude Code já guardou no seu Keychain e consulta um endpoint de uso não
+documentado, que pode mudar ou sair do ar sem aviso. As credenciais são usadas
+apenas localmente, para chamar a própria API da Anthropic, e não são enviadas a
+nenhum outro lugar nem gravadas no repositório. Use por sua conta e risco.
+
 ## Requisitos
 
 - macOS 13 (Ventura) ou mais novo.
