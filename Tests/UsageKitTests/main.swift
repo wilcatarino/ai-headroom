@@ -11,6 +11,7 @@ func runAllTests() async {
     await testUsageClient()
     await testProvider()
     testPollBackoff()
+    testLoginItemPolicy()
     testMenuBarTitle()
 }
 
