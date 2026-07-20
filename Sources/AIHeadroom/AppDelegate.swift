@@ -1,7 +1,7 @@
 import AppKit
 import UsageKit
 
-/// Per-provider live state: the latest snapshot plus the login/error/retry
+/// Per-provider live state: the latest snapshot plus the login/error/poll
 /// bookkeeping that used to live directly on AppDelegate. One instance per
 /// registered provider so each can be logged in, erroring, or loading
 /// independently.
@@ -11,8 +11,12 @@ final class ProviderRuntime {
     var lastSnapshot: UsageSnapshot?
     var loggedOut = false
     var hasError = false
-    var didLoadOnce = false
-    var initialRetryIndex = 0
+    /// Consecutive failed fetches, used to grow the backoff. Reset to 0 on a
+    /// successful fetch or a "not logged in" result (which sends no request).
+    var consecutiveFailures = 0
+    /// Bumped whenever a fetch starts or is scheduled, so a stale pending poll
+    /// invalidates itself instead of stacking extra requests.
+    var pollGeneration = 0
 
     init(_ provider: any UsageProvider) { self.provider = provider }
 
@@ -31,10 +35,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func log(_ msg: String) { NSLog("[AIHeadroom] \(msg)") }
 
     private var statusItem: NSStatusItem!
-    private var timer: Timer?
     private var runtimes: [ProviderRuntime] = []
 
     private static let defaultProviderKey = "defaultProviderID"
+
+    // Poll cadence. The steady interval stays under the panel's 180s "stale"
+    // threshold so normal operation never looks out of date. On failure the app
+    // backs off exponentially from `retryBase` up to `maxBackoff`, so a
+    // rate-limited endpoint (HTTP 429) is not hammered. See nextRefreshDelay.
+    private static let pollInterval: TimeInterval = 120
+    private static let retryBase: TimeInterval = 30
+    private static let maxBackoff: TimeInterval = 1800
 
     /// The provider whose number is shown in the menu bar. The user picks it
     /// from the menu (when more than one is registered); the choice persists.
@@ -43,11 +54,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let id = UserDefaults.standard.string(forKey: Self.defaultProviderKey)
         return runtimes.first(where: { $0.info.id == id }) ?? runtimes.first
     }
-
-    /// Fast retry schedule used until a provider's first successful load, so a
-    /// transient cold-start failure (keychain re-auth, network not ready)
-    /// self-heals in seconds instead of waiting for the 60s poll.
-    private static let initialRetryDelays: [TimeInterval] = [2, 4, 8, 15]
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let http = URLSessionHTTPClient()
@@ -81,9 +87,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         render()
         refreshAll()
-        timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.refreshAll() }
-        }
     }
 
     private func renderPreview(_ preview: String) {
@@ -106,41 +109,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func refresh(_ rt: ProviderRuntime) {
+        // Invalidate any pending scheduled poll for this runtime so a manual
+        // refresh (or overlap) doesn't stack a second request on top.
+        rt.pollGeneration += 1
+        let gen = rt.pollGeneration
         Task { @MainActor in
             do {
                 let snap = try await rt.provider.fetch(now: Date())
                 rt.lastSnapshot = snap
                 rt.loggedOut = false
                 rt.hasError = false
-                rt.didLoadOnce = true
-                rt.initialRetryIndex = 0
+                rt.consecutiveFailures = 0
                 self.log("refresh ok [\(rt.info.id)]: session \(snap.session.percent)% weekly \(snap.weekly.percent)%")
             } catch TokenError.notLoggedIn {
+                // No request was sent, so this is not a rate-limit concern: keep
+                // the steady cadence so a later login is noticed promptly.
                 self.log("refresh [\(rt.info.id)]: not logged in")
                 rt.loggedOut = true
                 rt.hasError = false
-                self.scheduleInitialRetryIfNeeded(rt)
+                rt.consecutiveFailures = 0
             } catch {
-                self.log("refresh [\(rt.info.id)] failed: \(error)")
+                // Back off so a failing or rate-limited endpoint is not hammered.
+                // Prior data keeps showing (stale); otherwise the error glyph.
                 rt.loggedOut = false
                 rt.hasError = true
-                // If we already had data, keep showing it (stale). Otherwise the
-                // computed state falls back to the error glyph.
-                self.scheduleInitialRetryIfNeeded(rt)
+                rt.consecutiveFailures += 1
+                self.log("refresh [\(rt.info.id)] failed (\(rt.consecutiveFailures)x): \(error)")
             }
             self.render()
+            self.scheduleNextPoll(rt, gen: gen)
         }
     }
 
-    /// Before a provider's first successful load, keep retrying on a short
-    /// backoff so the UI doesn't sit on "Carregando…"/error until the next tick.
-    private func scheduleInitialRetryIfNeeded(_ rt: ProviderRuntime) {
-        guard !rt.didLoadOnce, rt.initialRetryIndex < Self.initialRetryDelays.count else { return }
-        let delay = Self.initialRetryDelays[rt.initialRetryIndex]
-        rt.initialRetryIndex += 1
-        self.log("scheduling initial retry [\(rt.info.id)] in \(delay)s")
+    /// Schedule this runtime's next fetch. The delay is the steady interval
+    /// after a success, or a growing backoff after failures. The generation
+    /// guard drops the scheduled fire if a newer refresh has since started.
+    private func scheduleNextPoll(_ rt: ProviderRuntime, gen: Int) {
+        guard rt.pollGeneration == gen else { return }
+        let delay = nextRefreshDelay(
+            consecutiveFailures: rt.consecutiveFailures,
+            baseInterval: Self.pollInterval,
+            retryBase: Self.retryBase,
+            maxBackoff: Self.maxBackoff)
+        rt.pollGeneration += 1
+        let next = rt.pollGeneration
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self, weak rt] in
-            guard let self, let rt, !rt.didLoadOnce else { return }
+            guard let self, let rt, rt.pollGeneration == next else { return }
             self.refresh(rt)
         }
     }

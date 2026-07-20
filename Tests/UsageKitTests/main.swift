@@ -10,6 +10,7 @@ func runAllTests() async {
     await testTokenProvider()
     await testUsageClient()
     await testProvider()
+    testPollBackoff()
     testMenuBarTitle()
 }
 
