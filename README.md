@@ -1,6 +1,6 @@
-# Headroom
+# AI Headroom
 
-Headroom é um app de barra de menu para macOS que mostra, de relance, quanto dos limites das suas ferramentas de IA ainda resta. Ele começa com o Claude Code e foi desenhado para receber outros provedores depois.
+AI Headroom é um app de barra de menu para macOS que mostra, de relance, quanto dos limites das suas ferramentas de IA ainda resta. Ele começa com o Claude Code e foi desenhado para receber outros provedores depois.
 
 Para o Claude Code, mostra quanto do plano já foi usado, com contagem regressiva até o reset: janela de sessão (5h) e janela semanal (7d). Usa a conta já autenticada no Claude Code (lê as credenciais OAuth do Keychain) e consulta o mesmo endpoint que alimenta o comando `/usage`.
 
@@ -42,7 +42,7 @@ Esse é o comando do dia a dia. Sempre que o código mudar, rode de novo para at
 
 Na primeira vez que o app lê suas credenciais, o macOS mostra um prompt parecido com este:
 
-> "Headroom quer usar informações confidenciais armazenadas em 'Claude Code-credentials' no seu keychain."
+> "AI Headroom quer usar informações confidenciais armazenadas em 'Claude Code-credentials' no seu keychain."
 
 Clique em "Sempre Permitir". O app é um binário diferente do Claude Code, então o macOS pede autorização. Estados possíveis na barra enquanto isso:
 
@@ -64,7 +64,7 @@ A opção "Iniciar no login" vem ligada por padrão na primeira execução. Para
 | `./Scripts/make-app.sh --run` | Compila, encerra a cópia rodando e reabre a partir de `./build`, sem tocar em `/Applications`. |
 | `./Scripts/make-app.sh --install` | Compila, encerra, instala em `/Applications` e reabre. |
 
-Para encerrar o app manualmente, use o item Sair no painel ou rode `osascript -e 'quit app "Headroom"'`.
+Para encerrar o app manualmente, use o item Sair no painel ou rode `osascript -e 'quit app "AI Headroom"'`.
 
 ## Atualização dos dados
 
@@ -106,7 +106,7 @@ Sources/
     UsageSnapshot.swift         modelo normalizado (sessão, semana, por modelo)
     TimeFormatting.swift        contagem regressiva, tempo relativo e horário
     MenuBarTitle.swift          renderização pura do texto da barra (testada)
-  Headroom/               app AppKit fino (barra de menu)
+  AIHeadroom/             app AppKit fino (barra de menu)
     main.swift                  bootstrap do NSApplication (accessory, sem Dock)
     AppDelegate.swift           status item, poller de 60s, estados e wiring
     UsagePanelView.swift        painel com barras de progresso e resets
@@ -133,16 +133,16 @@ Fluxo dos dados até a tela:
 | `◐ -` | App não achou credenciais | Faça login no Claude Code e use Atualizar |
 | "desatualizado há X min" no painel | Rede ou API indisponível | Normal, recupera sozinho no próximo ciclo |
 | "Iniciar no login" não persiste | App não está em `/Applications` | Rode `./Scripts/make-app.sh --install` |
-| Nada aparece na barra | App não subiu | `pgrep -lf Headroom` e, se vazio, rode o `--install` |
+| Nada aparece na barra | App não subiu | `pgrep -lf AIHeadroom` e, se vazio, rode o `--install` |
 
 ### Aparece como "Desenvolvedor desconhecido"
 
-Em Ajustes do Sistema, na tela de Geral, em Itens de Início e Extensões, o Headroom aparece com o nome correto, mas agrupado embaixo de "Desenvolvedor desconhecido". O nome do app não está errado. O que fica desconhecido é o desenvolvedor, porque o bundle é assinado ad-hoc (`codesign --sign -`), sem um Team ID nem um Developer Name. Este projeto não tem hoje um Developer ID da Apple, então esse agrupamento é esperado e inofensivo. A única forma de sair do grupo "desconhecido" e remover o aviso do Gatekeeper na primeira abertura é assinar com um certificado Developer ID Application e notarizar o app, o que exige uma conta paga do Apple Developer Program. Enquanto essa conta não existir, o comportamento continua o descrito aqui.
+Em Ajustes do Sistema, na tela de Geral, em Itens de Início e Extensões, o AI Headroom aparece com o nome correto, mas agrupado embaixo de "Desenvolvedor desconhecido". O nome do app não está errado. O que fica desconhecido é o desenvolvedor, porque o bundle é assinado ad-hoc (`codesign --sign -`), sem um Team ID nem um Developer Name. Este projeto não tem hoje um Developer ID da Apple, então esse agrupamento é esperado e inofensivo. A única forma de sair do grupo "desconhecido" e remover o aviso do Gatekeeper na primeira abertura é assinar com um certificado Developer ID Application e notarizar o app, o que exige uma conta paga do Apple Developer Program. Enquanto essa conta não existir, o comportamento continua o descrito aqui.
 
-Para ver logs de diagnóstico, abra o Console.app e filtre por `Headroom`, ou rode o binário direto e observe o stderr:
+Para ver logs de diagnóstico, abra o Console.app e filtre por `AIHeadroom`, ou rode o binário direto e observe o stderr:
 
 ```bash
-swift run -c release Headroom   # Ctrl-C para sair
+swift run -c release AIHeadroom   # Ctrl-C para sair
 ```
 
 ## Notas técnicas
