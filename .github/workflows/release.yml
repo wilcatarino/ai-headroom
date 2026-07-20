@@ -30,6 +30,13 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          # Pre-1.0 (0.x) or a semver pre-release suffix (1.2.0-rc1) ships as a
+          # GitHub pre-release, so testing builds are flagged automatically.
+          if [[ "$VERSION" == 0.* || "$VERSION" == *-* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
           # Stamp the release version into the bundle before building.
           /usr/libexec/PlistBuddy \
             -c "Set :CFBundleShortVersionString $VERSION" \
@@ -68,7 +75,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          PRERELEASE_FLAG=""
+          if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
           gh release create "$GITHUB_REF_NAME" \
             --title "AI Headroom $GITHUB_REF_NAME" \
             --notes-file release-notes.md \
+            $PRERELEASE_FLAG \
             "AI-Headroom-${{ steps.version.outputs.version }}.zip"
