@@ -71,8 +71,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
-        // Enable start-at-login by default on first run.
-        if !UserDefaults.standard.bool(forKey: "didSetInitialLoginItem") {
+        // Enable start-at-login by default on first run, but only from an
+        // installed .app bundle so a dev binary never registers a login item.
+        // The flag is left unset when unsupported, so a later proper install
+        // still gets the default-on behavior.
+        if LoginItem.isSupported, !UserDefaults.standard.bool(forKey: "didSetInitialLoginItem") {
             LoginItem.setEnabled(true)
             UserDefaults.standard.set(true, forKey: "didSetInitialLoginItem")
         }
@@ -176,6 +179,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func buildMenu(now: Date) -> NSMenu {
         let menu = NSMenu()
+        // Manage item enablement ourselves so the login toggle can be disabled
+        // when start-at-login is not manageable from this location.
+        menu.autoenablesItems = false
         let header = NSMenuItem()
         header.view = UsagePanel.makeView(items: runtimes.map { ($0.info, $0.state) }, now: now)
         menu.addItem(header)
@@ -204,6 +210,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let login = NSMenuItem(title: "Iniciar no login", action: #selector(toggleLogin), keyEquivalent: "")
         login.target = self
         login.state = LoginItem.isEnabled ? .on : .off
+        login.isEnabled = LoginItem.isSupported
+        if !LoginItem.isSupported {
+            login.toolTip = "Disponível quando o app está instalado em Aplicativos"
+        }
         menu.addItem(login)
 
         menu.addItem(.separator())
