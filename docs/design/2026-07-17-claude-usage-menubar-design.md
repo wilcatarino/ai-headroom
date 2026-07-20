@@ -3,7 +3,7 @@
 **Date:** 2026-07-17
 **Status:** Implemented (see "Implementation notes" at the end for deviations from this design)
 
-> **Rename:** the product was later named **Headroom** (repo `ai-headroom`), reframed as a multi-provider usage meter that starts with Claude Code. Where this document says `ClaudeUsageBar`, the shipped app and executable are `Headroom`. The `UsageKit` library name is unchanged.
+> **Rename:** the product was later named **AI Headroom** (repo `ai-headroom`, bundle id `com.wilcatarino.aiheadroom`), reframed as a multi-provider usage meter that starts with Claude Code. Where this document says `ClaudeUsageBar`, the shipped app is `AI Headroom` and its executable is `AIHeadroom`. The `UsageKit` library name is unchanged.
 
 ## Goal
 

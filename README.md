@@ -123,7 +123,7 @@ Sources/
 Tests/UsageKitTests/            runner de testes próprio e fixtures
 Packaging/Info.plist            template do bundle (LSUIElement = sem Dock)
 Scripts/make-app.sh             build, run e install
-docs/superpowers/               spec de design e plano de implementação
+docs/design/                    spec de design e plano de implementação (histórico)
 ```
 
 Fluxo dos dados até a tela:
