@@ -2,7 +2,7 @@
 
 > **Status: Implemented (2026-07-17).** All 11 tasks were delivered. This document is preserved as the plan of record; the task bodies below reflect what was planned. See "Implementation status and deviations" immediately below for the differences between this plan and what actually shipped, which is the source of truth for the current state.
 
-> **Rename:** the app and executable `ClaudeUsageBar` were later renamed to **Headroom** (repo `ai-headroom`, bundle id `com.wilcatarino.headroom`), reframed as a multi-provider usage meter starting with Claude Code. The `UsageKit` library name is unchanged. References to `ClaudeUsageBar` below are historical.
+> **Rename:** the app `ClaudeUsageBar` was later renamed to **AI Headroom** (repo `ai-headroom`, bundle id `com.wilcatarino.aiheadroom`, executable `AIHeadroom`), reframed as a multi-provider usage meter starting with Claude Code. The `UsageKit` library name is unchanged. References to `ClaudeUsageBar` below are historical.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
