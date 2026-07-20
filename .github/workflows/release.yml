@@ -1,0 +1,74 @@
+name: Release
+
+# Cut a release by pushing a tag, e.g.:
+#   git tag v1.1.0 && git push origin v1.1.0
+# This builds the app bundle, zips it, and publishes a GitHub Release with the
+# zip attached. The app is ad-hoc signed and not notarized, so the release notes
+# tell users how to clear the Gatekeeper quarantine.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Test
+        run: swift run UsageKitTests
+
+      - name: Version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          # Stamp the release version into the bundle before building.
+          /usr/libexec/PlistBuddy \
+            -c "Set :CFBundleShortVersionString $VERSION" \
+            -c "Set :CFBundleVersion $VERSION" \
+            Packaging/Info.plist
+
+      - name: Build app bundle
+        run: ./Scripts/make-app.sh
+
+      - name: Zip bundle
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            "build/AI Headroom.app" \
+            "AI-Headroom-${{ steps.version.outputs.version }}.zip"
+
+      - name: Release notes
+        run: |
+          cat > release-notes.md <<'NOTES'
+          ## Instalação
+
+          1. Baixe o `AI-Headroom-*.zip` abaixo e descompacte.
+          2. Mova `AI Headroom.app` para a pasta Aplicativos.
+          3. Na primeira abertura, como o app não é assinado por um Developer ID
+             da Apple nem notarizado, o macOS bloqueia. Para liberar, escolha uma:
+             - Em Ajustes do Sistema, Privacidade e Segurança, role até a mensagem
+               sobre "AI Headroom" e clique em "Abrir Mesmo Assim".
+             - Ou no Terminal:
+               `xattr -dr com.apple.quarantine "/Applications/AI Headroom.app"`,
+               depois abra o app.
+
+          O app lê credenciais apenas localmente (Keychain) e não envia nada para
+          terceiros. Veja o README para detalhes e o aviso de projeto não oficial.
+          NOTES
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "AI Headroom $GITHUB_REF_NAME" \
+            --notes-file release-notes.md \
+            "AI-Headroom-${{ steps.version.outputs.version }}.zip"

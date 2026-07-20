@@ -30,6 +30,15 @@ Confirme o toolchain com `swift --version` (deve mostrar Swift 6.x).
 
 ## Como rodar
 
+### Instalar pela última release (mais fácil)
+
+Baixe o `AI-Headroom-*.zip` da [página de Releases](https://github.com/wilcatarino/ai-headroom/releases), descompacte e mova `AI Headroom.app` para a pasta Aplicativos. Como o app não é assinado por um Developer ID da Apple nem notarizado, na primeira abertura o macOS bloqueia. Para liberar, escolha uma das opções:
+
+- Em Ajustes do Sistema, Privacidade e Segurança, role até a mensagem sobre "AI Headroom" e clique em "Abrir Mesmo Assim".
+- Ou no Terminal: `xattr -dr com.apple.quarantine "/Applications/AI Headroom.app"`, depois abra o app.
+
+### Compilar do código
+
 Compilar, instalar em `/Applications` e abrir:
 
 ```bash
