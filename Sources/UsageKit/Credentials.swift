@@ -4,7 +4,7 @@ public enum UsageKit {
     public static let marker = "usagekit"
 }
 
-public struct Credentials: Equatable {
+public struct Credentials: Equatable, Sendable {
     public let accessToken: String
     public let refreshToken: String
     public let expiresAtMillis: Int

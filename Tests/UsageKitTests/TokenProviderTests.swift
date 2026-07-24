@@ -4,7 +4,8 @@ import UsageKit
 private final class FakeStore: CredentialsStoring, @unchecked Sendable {
     var creds: Credentials?
     var saved: RefreshedTokens?
-    func load() throws -> Credentials? { creds }
+    var loadCalls = 0
+    func load() throws -> Credentials? { loadCalls += 1; return creds }
     func saveRefreshedTokens(_ t: RefreshedTokens) throws { saved = t }
 }
 
@@ -48,4 +49,39 @@ func testTokenProvider() async {
     let provider3 = TokenProvider(store: FakeStore(), refresher: FakeRefresher(), skewSeconds: 60)
     do { _ = try await provider3.validAccessToken(now: now) } catch { threw = true }
     T.expect(threw, "notLoggedIn throws")
+}
+
+func testTokenProviderSeed() async {
+    let now = Date(timeIntervalSince1970: 1000)
+
+    // Seeded valid creds: first call uses the seed without reading the store.
+    let store = FakeStore()
+    store.creds = Credentials(accessToken: "AT_STORE", refreshToken: "RT_STORE",
+                              expiresAtMillis: 9_000_000_000_000, subscriptionType: "max", rateLimitTier: nil)
+    let seed = Credentials(accessToken: "AT_SEED", refreshToken: "RT_SEED",
+                           expiresAtMillis: 9_000_000_000_000, subscriptionType: "max", rateLimitTier: nil)
+    let refresher = FakeRefresher()
+    let provider = TokenProvider(store: store, refresher: refresher, skewSeconds: 60,
+                                 initialCredentials: seed)
+    let first = try! await provider.validAccessToken(now: now)
+    T.equal(first, "AT_SEED")
+    T.equal(store.loadCalls, 0, "seed avoids the startup read")
+
+    // Second call falls back to the store (seed is consumed once).
+    let second = try! await provider.validAccessToken(now: now)
+    T.equal(second, "AT_STORE")
+    T.equal(store.loadCalls, 1, "later calls read the store")
+
+    // Seeded but expired: refresh runs off the seed's refresh token, still no read.
+    let store2 = FakeStore()
+    let seed2 = Credentials(accessToken: "AT_SEED", refreshToken: "RT_SEED",
+                            expiresAtMillis: 500_000, subscriptionType: "max", rateLimitTier: nil)
+    let refresher2 = FakeRefresher()
+    let provider2 = TokenProvider(store: store2, refresher: refresher2, skewSeconds: 60,
+                                  initialCredentials: seed2)
+    let token = try! await provider2.validAccessToken(now: now)
+    T.equal(token, "AT2")
+    T.equal(refresher2.calls, 1)
+    T.equal(store2.loadCalls, 0, "expired seed refreshes without reading")
+    T.equal(store2.saved?.accessToken, "AT2", "refreshed token persisted")
 }
