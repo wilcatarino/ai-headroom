@@ -24,7 +24,7 @@ Projeto independente, sem vínculo com a Anthropic. Ele lê as credenciais que o
 
 - macOS 13 (Ventura) ou mais novo.
 - Swift toolchain via Command Line Tools (`xcode-select --install`). Não é necessário o Xcode completo.
-- Estar logado no Claude Code. O app lê o item `Claude Code-credentials` do Keychain, criado quando você faz login no Claude Code.
+- Estar logado no Claude Code. O app lê o item `Claude Code-credentials` do Keychain, criado quando você faz login no Claude Code. Se o Keychain não tiver o item, ele recorre ao arquivo `~/.claude/.credentials.json` (ou `$CLAUDE_CONFIG_DIR/.credentials.json`), usado pelo Claude Code em ambientes sem Keychain.
 
 Confirme o toolchain com `swift --version` (deve mostrar Swift 6.x).
 
@@ -53,7 +53,7 @@ Na primeira vez que o app lê suas credenciais, o macOS mostra um prompt parecid
 
 > "AI Headroom quer usar informações confidenciais armazenadas em 'Claude Code-credentials' no seu keychain."
 
-Clique em "Sempre Permitir". O app é um binário diferente do Claude Code, então o macOS pede autorização. Estados possíveis na barra enquanto isso:
+Clique em "Sempre Permitir". O app é um binário diferente do Claude Code, então o macOS pede autorização. O app lê o Keychain uma única vez por inicialização, então é no máximo um prompt por abertura. Se suas credenciais estiverem no arquivo (`~/.claude/.credentials.json`) em vez do Keychain, não há prompt nenhum. Estados possíveis na barra enquanto isso:
 
 - `◐ …`: carregando (prompt ainda não aprovado, ou primeira busca em andamento).
 - `◐ ⚠`: a última busca falhou (rede, API ou Keychain). O app tenta de novo sozinho com backoff de 2, 4, 8 e 15 segundos até a primeira carga dar certo. Você também pode forçar pelo item Atualizar.
@@ -106,6 +106,8 @@ Sources/
     Keychain.swift              leitura e escrita do item do Keychain (SecItem)
     CredentialsBlob.swift       parse e reescrita não destrutiva do JSON de credenciais
     KeychainStore.swift         compõe os dois acima (CredentialsStoring)
+    FileCredentialsStore.swift  lê/escreve ~/.claude/.credentials.json (fallback)
+    FallbackCredentialsStore.swift  Keychain primeiro, arquivo como fallback
     Credentials.swift           modelo de credenciais e rótulo do plano
     TokenProvider.swift         decide expiração e renova o token (via protocolo)
     OAuthRefresher.swift        chamada real ao endpoint de refresh OAuth
@@ -128,8 +130,8 @@ docs/design/                    spec de design e plano de implementação (hist�
 
 Fluxo dos dados até a tela:
 
-1. `KeychainStore` lê `Claude Code-credentials` e decodifica em `Credentials`.
-2. `TokenProvider` verifica a validade. Se expirado, `OAuthRefresher` renova e `KeychainStore` regrava sem apagar outros campos do item.
+1. `FallbackCredentialsStore` lê as credenciais: primeiro `KeychainStore` (`Claude Code-credentials`), senão `FileCredentialsStore` (`~/.claude/.credentials.json`). O `AppDelegate` faz essa leitura uma única vez no arranque e semeia o `TokenProvider` com ela, para não reler o Keychain (e evitar um segundo prompt).
+2. `TokenProvider` verifica a validade. Se expirado, `OAuthRefresher` renova e a escrita volta para a mesma fonte que tinha as credenciais, sem apagar outros campos do item.
 3. `UsageClient` chama `GET https://api.anthropic.com/api/oauth/usage` com o token e mapeia a resposta em `UsageSnapshot`.
 4. `renderMenuBarTitle` transforma o snapshot no texto da barra e `UsagePanel` monta o painel. O `AppDelegate` repete isso a cada 60 segundos.
 

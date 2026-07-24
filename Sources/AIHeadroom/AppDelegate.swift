@@ -57,10 +57,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let http = URLSessionHTTPClient()
-        let store = KeychainStore()
+        // Read the keychain first, then the on-disk file Claude Code uses when
+        // the keychain is not in play, so devs with either setup are covered.
+        let store = FallbackCredentialsStore(
+            primary: KeychainStore(),
+            secondary: FileCredentialsStore(path: FileCredentialsStore.defaultPath()))
         let refresher = OAuthRefresher(http: http)
-        let tokenProvider = TokenProvider(store: store, refresher: refresher)
-        let planString = ((try? store.load()) ?? nil).map {
+        // Load once at launch and reuse it for both the plan label and the
+        // first token check. Each distinct keychain read prompts, so seeding the
+        // token provider with this single read keeps launch at one prompt.
+        let loaded = (try? store.load()) ?? nil
+        let tokenProvider = TokenProvider(store: store, refresher: refresher,
+                                          initialCredentials: loaded)
+        let planString = loaded.map {
             planLabel(subscriptionType: $0.subscriptionType, rateLimitTier: $0.rateLimitTier)
         } ?? "Claude Code"
 
